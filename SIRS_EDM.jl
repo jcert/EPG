@@ -1,65 +1,125 @@
 using DifferentialEquations
 using Plots
-using Plotly
+#using Plotly
 
-plotly()
 
-#file that contains data structures and functions used by the main code 
-include("aux.jl")
+
+#plotly()
+gr()
+include("newaux.jl")
    
-a = 0.08
-g0 = SIRS_Game(2,fp,[4.0*a,(a/2)],a ,a/2)
+plt_ext = "png"
 
-I = 0.01
-R = 0.01
+g0 = SIRS_Game(2,fp)
+
+g0.x_star
+g0.σ = 0.1
+g0.ω = 0.005
+g0.γ = g0.σ
+g0.υ = 2.0
+g0.β   = [0.15;0.19]
+g0.c   = [0.2;0.0]
+g0.c_star = 0.1
+g0.ρ = 0.0
+
+fixall!(g0)
+
+I = Ib(g0,g0.β[1])
+R = Rb(g0,g0.β[1])
 S = 1.0-I-R
 
-W = [S;I;R;1.0;0.0;1.0;0.0;0.0;0.0;0.0]
-
-##
-g0.ζ .= [8.0,6.0] 
-g0.ϑ .= [10.0,4.0]
-g0.θ .= [1.0,8.0] 
-g0.ν .= [0.5,3.0] 
-g0.ξ .= [1.0,1.0] 
+W = [g0.β[1]*I;g0.β[1]*R;1.0;0.0]
 
 
-prob = ODEProblem(h!,W ,[0.0,420.0],g0)
-sol = solve(prob,Tsit5())
-#plot(sol, label=["S" "I" "R" "s1" "s2" "f1" "f2"])
-Plots.plot(sol, vars=r.(1:2,2), label="I", linewidth=4, thickness_scaling = 1)
-xlims!(0.0,510.0)
-xlabel!("")
-#xlabel!("Time (day)")
-#ylabel!("Infected Population (ratio)")
-png("infected_12")
+## assertions
+# betas are in increasing order
+@assert all(diff(g0.β).>0)
+# c vector is in decreasing order
+@assert all(diff(g0.c).<0)
+# σ < β[1]
+@assert all(g0.σ.<g0.β)
+#c_star > g0.c[end]
+@assert g0.c_star>0
+@assert g0.c_star+g0.c[end]<g0.c[1]
 
-##
-Plots.plot(sol, vars=r(2,2), label=false, linewidth=4, thickness_scaling = 1)
-xlims!(0.0,510.0)
-xlabel!("")
-png("infected_2")
+## Figure 2.a.top
+plot()
+for g0.υ = [0.806,0.316]
+    fixall!(g0)
+    prob = ODEProblem(h!,W ,[0.0,2500.0],g0)
+    #DP5()
+    #Euler(),dt=0.001 
+    # AutoTsit5(Rosenbrock23())
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
 
-##
-Plots.plot(sol, vars=r.([1,2]',[2,3]), label=["I" "R"], linewidth=4, thickness_scaling = 1)
-xlims!(0.0,510.0)
-xlabel!("")
-#xlabel!("Time (day)")
-#ylabel!("Population (ratio)")
+    X = mapslices(x->[x;1.0-sum(x)], sol[xi(g0,1:g0.NS-1),:], dims=1)
+    
+    i_star = (g0.η*(1-g0.σ/g0.β_star))
+    Plots.plot!(sol.t, (sol[1,:]./(g0.β'*X)')./(i_star), label="I,υ=$(g0.υ)")
+end
+plot!()
+ylabel!("I/I*")
+xlabel!("Days")
+println("I_star = $(g0.η*(1-g0.σ/g0.β_star))")
+println("R_star = $((1-g0.η)*(1-g0.σ/g0.β_star))")
+savefig("images/2.a.top.SIRS_EDM_I_ratio_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(plt_ext)")
 
-##
-png("sir_12")
-Plots.plot(sol, vars=r.([1,2]',[2,3]), label=["I" "R"], linewidth=4, thickness_scaling = 1)
-xlims!(0.0,510.0)
-xlabel!("")
-png("sir_12")
 
-##
-Plots.plot(sol, vars=[r(1,4),r(2,4),r(1,5),r(2,5)], label=["s1" "s2" "f1" "f2"],linewidth=4, thickness_scaling = 1)
-xlims!(0.0,510.0)
-xlabel!("")
-#xlabel!("Time (day)")
-#ylabel!("Population (ratio)")
-png("strategies_fatigue")
+## Figure 2.b.top
+plot()
+for g0.υ = [0.806,0.316]
+    fixall!(g0)
+    prob = ODEProblem(h!,W ,[0.0,2000.0],g0)
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
+
+    X = mapslices(x->[x;1.0-sum(x)], sol[xi(g0,1:g0.NS-1),:], dims=1)
+    rr = (sol[qi(g0,1),:]'.*g0.β).+g0.r_star
+    plot!(sol.t, sum(X.*rr,dims=1)', label="cost(t),υ=$(g0.υ)")
+end
+plot!(x->g0.c_star,c=:black,linestyle=:dash, label=nothing)
+ylabel!("Cost - r(t)")
+xlabel!("Days")
+savefig("images/2.b.top.SIRS_EDM_cost_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(plt_ext)")
+
+
+## Figure 2.a.bottom
+plot()
+for g0.υ = [4.0,2.0]
+    fixall!(g0)
+    prob = ODEProblem(h!,W ,[0.0,1000.0],g0)
+    #DP5()
+    #Euler(),dt=0.001 
+    # AutoTsit5(Rosenbrock23())
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
+
+    X = mapslices(x->[x;1.0-sum(x)], sol[xi(g0,1:g0.NS-1),:], dims=1)
+    
+    i_star = (g0.η*(1-g0.σ/g0.β_star))
+    Plots.plot!(sol.t, (sol[1,:]./(g0.β'*X)')./(i_star), label="I,υ=$(g0.υ)")
+end
+plot!()
+ylabel!("I/I*")
+xlabel!("Days")
+println("I_star = $(g0.η*(1-g0.σ/g0.β_star))")
+println("R_star = $((1-g0.η)*(1-g0.σ/g0.β_star))")
+savefig("images/2.a.bottom.SIRS_EDM_I_ratio_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(plt_ext)")
+
+
+## Figure 2.b.bottom
+plot()
+for g0.υ = [0.806,0.316]
+    fixall!(g0)
+    prob = ODEProblem(h!,W ,[0.0,2000.0],g0)
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
+
+    #plot!(sol.t,sol.u[1,:], label="cost(t),υ=$(g0.υ)")
+    plot!(sol, vars=(3), label="x_1(t),υ=$(g0.υ)")
+end
+ylabel!("x_1(t)")
+xlabel!("Days")
+savefig("images/2.b.bottom.SIRS_EDM_x1_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(plt_ext)")
+
+
+
 
 
