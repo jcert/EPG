@@ -6,7 +6,7 @@ import GLPK
 mutable struct SIRS_Game
     NS::Int             #number of strategies
     q::Vector{Float64} #Dynamic payoff state
-    #parameters of the epidemics
+    #parameters of the epidemic
     σ::Float64
     ω::Float64
     γ::Float64
@@ -45,16 +45,50 @@ mutable struct SIRS_Game
 end
 
 
+"""
+`fixall!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update η, β* and r*. Call it whenever you change any parameters in g
+
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fixall!(g)
+```
+""" 
 function fixall!(g::SIRS_Game)
     fix_η!(g)
     fix_βx_star!(g)
     fix_r_star!(g)
 end
 
+
+
+"""
+`fix_η!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update η. Use `fixall!` instead of calling this directly
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fix_η!(g)
+```
+""" 
 function fix_η!(g::SIRS_Game)
     g.η = g.ω/(g.ω+g.γ)
 end
 
+
+"""
+`fix_βx_star!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update β*. Use `fixall!` instead of calling this directly
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fix_βx_star!(g)
+```
+""" 
 function fix_βx_star!(g::SIRS_Game)
     m = JuMP.Model(GLPK.Optimizer)
     JuMP.@variable(m, x[1:size(g.β,1)] >= 0)
@@ -68,6 +102,17 @@ function fix_βx_star!(g::SIRS_Game)
     g.x_star = JuMP.value.(x)
 end
 
+
+"""
+`fix_r_star!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update r*. Use `fixall!` instead of calling this directly
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fix_r_star!(g)
+```
+""" 
 function fix_r_star!(g::SIRS_Game)
     cc = g.c.-minimum(g.c)
 
@@ -90,13 +135,15 @@ function r(strategy,index::Int)
     5*(strategy-1)+index
 end
 
+
+
 """
 `ei(index::String) -> Int`
 
 # Examples
 ```julia
-julia> r(3,"X")
-14
+julia> ei(g,"I")
+2
 ```
 """ 
 function ei(g::SIRS_Game,index::String)
@@ -114,12 +161,12 @@ end
 
 
 """
-`xi(index::String) -> Int`
+`xi(g::SIRS_Game,index::Int) -> Int`
 
 # Examples
 ```julia
-julia> x(3)
-14
+julia> xi(g,3)
+5
 ```
 """ 
 function xi(g::SIRS_Game,index)
@@ -128,12 +175,12 @@ end
 
 
 """
-`q(index::String) -> Int`
+`qi(g::SIRS_Game,index::Int) -> Int`
 
 # Examples
 ```julia
-julia> x(3)
-14
+julia> qi(g,3)
+5
 ```
 """ 
 function qi(g::SIRS_Game,index)
