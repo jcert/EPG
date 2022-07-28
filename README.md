@@ -7,6 +7,9 @@ We propose a system theoretic approach to select and stabilize the endemic equil
 
 [preprint](https://arxiv.org/abs/2201.10529)
 
+[![DOI](https://zenodo.org/badge/395116198.svg)](https://zenodo.org/badge/latestdoi/395116198)
+
+
 
 ## Requirements
 - Julia 1.6
