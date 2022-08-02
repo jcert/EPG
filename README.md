@@ -22,14 +22,22 @@ After installing all the required software you can press backspace to exit the p
 To generate Figure 1, open Julia and run `include("optimizer.jl")`.
 
 
+## optimizer.jl
+File to generate the plot used for Figure 1
+
 ## SIRS\_EDM.jl
 File to generate the plots used for Figure 2
 
-
 ## SIRS\_EDM.ipybn
-Jupyter Notebook file with an interactive plot, in it you can change the parameters of the game and epidemic disease
+Jupyter Notebook file with an interactive plot, in it you can change the parameters of the game and epidemic disease. Here are a few screenshoots of that 
+
+![iter_sim_run1](https://user-images.githubusercontent.com/13306869/182480097-9fe10b72-3d3c-4970-95d8-1dc1d81d2f89.png)
+![iter_sim_run2](https://user-images.githubusercontent.com/13306869/182480095-26046b13-0d7c-4344-bb88-0f46580b0a6e.png)
+![iter_sim_run3](https://user-images.githubusercontent.com/13306869/182480094-2fe525e6-f7a9-44e7-b26d-202e372cb788.png)
+![iter_sim_run4](https://user-images.githubusercontent.com/13306869/182480099-9b8f07ab-5282-47c5-b469-f19da81b7f14.png)
 
 
-## optimizer.jl
-File to generate the plot used for Figure 1
+
+
+
 
