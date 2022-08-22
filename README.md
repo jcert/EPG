@@ -31,7 +31,7 @@ File to generate the plots used for Figure 2
 ## SIRS\_EDM.ipybn
 Jupyter Notebook file with an interactive plot, in it you can change the parameters of the game and epidemic disease.
 
-This simulation follows the structure of example 1, in which the system starts from an equilibrium and, due to the dynamic payoff, goes to another equilibrium. In the paper, we consider the case in which expensive measures were previously ($t < 0$) in place, but a planner seeks from $t = 0$ onward to relax those measures to reduce the normalized cost rate from $r'(0)x(0) = 0.2$ to a long-term limit of $c^*=0.1$, but in the interactive simulation other initial conditions are allowed (such as starting in an equilibrium associated with a smaller budget and moving to a more expensive one.)
+This simulation follows the structure of example 1, in which the system starts from an equilibrium and, due to the dynamic payoff, goes to another equilibrium. In the paper, we consider the case in which expensive measures were previously $(t < 0)$ in place, but a planner seeks from $t = 0$ onward to relax those measures to reduce the normalized cost rate from $r'(0)x(0) = 0.2$ to a long-term limit of $c^*=0.1$, but in the interactive simulation other initial conditions are allowed (such as starting in an equilibrium associated with a smaller budget and moving to a more expensive one.)
 
 Here are a few screenshots of that 
 
