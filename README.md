@@ -29,15 +29,18 @@ File to generate the plot used for Figure 1
 File to generate the plots used for Figure 2
 
 ## SIRS\_EDM.ipybn
-Jupyter Notebook file with an interactive plot, in it you can change the parameters of the game and epidemic disease. Here are a few screenshoots of that 
+Jupyter Notebook file with an interactive plot, in it you can change the parameters of the game and epidemic disease.
 
-![iter_sim_run1](https://user-images.githubusercontent.com/13306869/182480097-9fe10b72-3d3c-4970-95d8-1dc1d81d2f89.png)
-![iter_sim_run2](https://user-images.githubusercontent.com/13306869/182480095-26046b13-0d7c-4344-bb88-0f46580b0a6e.png)
-![iter_sim_run3](https://user-images.githubusercontent.com/13306869/182480094-2fe525e6-f7a9-44e7-b26d-202e372cb788.png)
-![iter_sim_run4](https://user-images.githubusercontent.com/13306869/182480099-9b8f07ab-5282-47c5-b469-f19da81b7f14.png)
+This simulation follows the structure of example 1, in which the system starts from an equilibrium and, due to the dynamic payoff, goes to another equilibrium. In the paper, we consider the case in which expensive measures were previously ($t < 0$) in place, but a planner seeks from $t = 0$ onward to relax those measures to reduce the normalized cost rate from $r'(0)x(0) = 0.2$ to a long-term limit of $c^*=0.1$, but in the interactive simulation other initial conditions are allowed (such as starting in an equilibrium associated with a smaller budget and moving to a more expensive one.)
 
+Here are a few screenshots of that 
 
 
+![iter_sim_run1](https://user-images.githubusercontent.com/13306869/185970707-23018966-b530-4179-b2ae-586966643618.png)
+![iter_sim_run2](https://user-images.githubusercontent.com/13306869/185970709-e8f4e701-3744-4dc4-b59f-55465587e6bd.png)
+![iter_sim_run3](https://user-images.githubusercontent.com/13306869/185970711-c53a4d83-3e54-47e8-a3ba-e82beba53c59.png)
+![iter_sim_run4](https://user-images.githubusercontent.com/13306869/185970715-6dc726d7-a49b-4c4e-bf4f-4c4c81309b11.png)
+![iter_sim_run5](https://user-images.githubusercontent.com/13306869/185970719-2bbd1b0d-8a30-4c71-bc21-d2509e4b53e3.png)
 
 
 
