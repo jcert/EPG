@@ -3,10 +3,13 @@ using Plots
 #using Plotly
 
 
+throw("This file is work in progress, do not use as it is!")
+
 
 #plotly()
 gr()
-include("newaux.jl")
+include("lib/SIRS_Game.jl")
+include("lib/Dynamics.jl")
    
 plt_ext = "png"
 
@@ -22,14 +25,16 @@ g0.c   = [0.2;0.0]
 g0.c_star = 0.1
 g0.ρ = 0.0
 
-fixall!(g0)
 
+fixall_PBR!(g0;PBR_η=0.5)
+
+# for the bound to be meaningful we need to 
+#    have S(x(0),p(0)) = 0  
 I = Ib(g0,g0.β[1])
 R = Rb(g0,g0.β[1])
 S = 1.0-I-R
 
 W = [g0.β[1]*I;g0.β[1]*R;1.0;0.0]
-
 
 ## assertions
 # betas are in increasing order
@@ -42,11 +47,14 @@ W = [g0.β[1]*I;g0.β[1]*R;1.0;0.0]
 @assert g0.c_star>0
 @assert g0.c_star+g0.c[end]<g0.c[1]
 
+#g0.r_star = [1.0;-10.0]
+
 ## Figure 2.a.top
 plot()
-for g0.υ = [0.806,0.316]
-    fixall!(g0)
-    prob = ODEProblem(h!,W ,[0.0,2500.0],g0)
+for g0.υ = [0.2, 0.75,0.806,0.316]
+    
+    fixall_PBR!(g0;PBR_η=0.5)
+    prob = ODEProblem(h_logit!,W ,[0.0,5000.0],g0)
     #DP5()
     #Euler(),dt=0.001 
     # AutoTsit5(Rosenbrock23())
@@ -68,8 +76,8 @@ savefig("images/2.a.top.SIRS_EDM_I_ratio_$(g0.c_star)_nu$(round(g0.υ,digits=1))
 ## Figure 2.b.top
 plot()
 for g0.υ = [0.806,0.316]
-    fixall!(g0)
-    prob = ODEProblem(h!,W ,[0.0,2000.0],g0)
+    fixall_PBR!(g0;PBR_η=0.5)
+    prob = ODEProblem(h_logit!,W ,[0.0,20000.0],g0)
     sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
 
     X = mapslices(x->[x;1.0-sum(x)], sol[xi(g0,1:g0.NS-1),:], dims=1)
@@ -85,8 +93,8 @@ savefig("images/2.b.top.SIRS_EDM_cost_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(
 ## Figure 2.a.bottom
 plot()
 for g0.υ = [4.0,2.0]
-    fixall!(g0)
-    prob = ODEProblem(h!,W ,[0.0,1000.0],g0)
+    fixall_PBR!(g0;PBR_η=0.5)
+    prob = ODEProblem(h_logit!,W ,[0.0,1000.0],g0)
     #DP5()
     #Euler(),dt=0.001 
     # AutoTsit5(Rosenbrock23())
@@ -108,8 +116,8 @@ savefig("images/2.a.bottom.SIRS_EDM_I_ratio_$(g0.c_star)_nu$(round(g0.υ,digits=
 ## Figure 2.b.bottom
 plot()
 for g0.υ = [0.806,0.316]
-    fixall!(g0)
-    prob = ODEProblem(h!,W ,[0.0,2000.0],g0)
+    fixall_PBR!(g0;PBR_η=0.5)
+    prob = ODEProblem(h_logit!,W ,[0.0,2000.0],g0)
     sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
 
     #plot!(sol.t,sol.u[1,:], label="cost(t),υ=$(g0.υ)")

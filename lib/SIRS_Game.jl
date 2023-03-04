@@ -1,5 +1,6 @@
 import JuMP
-import GLPK
+import GLPK, Ipopt
+
 #this file contains data structures and functions used by the main code 
 
 
@@ -46,21 +47,48 @@ end
 
 
 """
-`fixall!(g::SIRS_Game) -> nothing`
+`fixall_IPC!(g::SIRS_Game) -> nothing`
 
 Get the SIRS_Game `g` to calculate and update η, β* and r*. Call it whenever you change any parameters in g
 
 # Examples
 ```julia
 julia> g = SIRS_Game(2,x->[2;2])
-julia> fixall!(g)
+julia> fixall_IPC!(g)
 ```
 """ 
-function fixall!(g::SIRS_Game)
+function fixall_IPC!(g::SIRS_Game)
     fix_η!(g)
     fix_βx_star!(g)
-    fix_r_star!(g)
+    fix_r_star_IPC!(g)
 end
+
+"""
+`fixall_PBR!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update η, β* and r*. Call it whenever you change any parameters in g
+
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fixall_PBR!(g)
+```
+""" 
+function fixall_PBR!(g::SIRS_Game; PBR_η)
+    fix_η!(g)
+    fix_r_star_PBR!(g; PBR_η)
+    
+    C(r) = begin
+        s = exp.((g.r_star-g.c)/PBR_η)
+        s/sum(s)
+    end
+
+    #fix_βx_star!(g)
+    g.β_star = g.β'*C(g.r_star)
+    g.x_star = C(g.r_star)
+
+end
+
 
 
 
@@ -104,21 +132,67 @@ end
 
 
 """
-`fix_r_star!(g::SIRS_Game) -> nothing`
+`fix_r_star_IPC!(g::SIRS_Game) -> nothing`
 
 Get the SIRS_Game `g` to calculate and update r*. Use `fixall!` instead of calling this directly
 # Examples
 ```julia
 julia> g = SIRS_Game(2,x->[2;2])
-julia> fix_r_star!(g)
+julia> fix_r_star_IPC!(g)
 ```
 """ 
-function fix_r_star!(g::SIRS_Game)
+function fix_r_star_IPC!(g::SIRS_Game)
     cc = g.c.-minimum(g.c)
 
     g.r_star = [ g.x_star[i]≈0 ? cc[i]-g.ρ : cc[i] for i=1:size(g.β,1)]
 end
 
+
+"""
+`fix_r_star_PBR!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update r*. Use `fixall!` instead of calling this directly
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fix_r_star_IPC!(g)
+```
+""" 
+function fix_r_star_PBR!(g::SIRS_Game; PBR_η)
+
+    m = JuMP.Model(Ipopt.Optimizer)
+    JuMP.set_silent(m) 
+    JuMP.@variable(m, r[1:g.NS]>=0)
+
+    
+    C(r) = begin
+        s = exp.((r-g.c)/PBR_η)
+
+        s/sum(s)
+    end
+    
+    F(r...) = begin
+        (collect(r)'*C(collect(r)))
+    end
+    JuMP.register(m, :F, length(r), F; autodiff = true)
+    G(r...) = begin
+        g.β'*C(collect(r))
+    end
+    JuMP.register(m, :G, length(r), G; autodiff = true)
+
+    JuMP.@NLconstraint(m, F(r...) <= g.c_star )
+    JuMP.@NLobjective(m, Min, G(r...) )
+
+    JuMP.optimize!(m)
+
+    g.r_star = JuMP.value.(r)
+
+    @show C(g.r_star)
+    @show g.r_star'*C(g.r_star),  g.β'*C(g.r_star)
+
+
+    g.r_star
+end
 
 
 
@@ -234,119 +308,3 @@ function Rb(g,B)
     #u #state
     (1-g.η)*Ib(g,B)/g.η
 end
-
-
-
-
-
-
-
-"""
-`smith(g::SIRS_Game,x::Vector{Float64},t::Float64,i) -> Float`
-
-Smith dynamics. Takes parameters `g` (an SIRS Game), `x` (a vector with the current state, 
-for both epidemic and game), `t` (time), and `i` (strategy).
-
-
-# Examples
-```julia
-julia> smith(SIRS_Game(2,(g,x,t,j)->[1,0][j],[4.0,1.0],2.0 ,1.0), zeros(10), 1.0, 1)
-0.0
-```
-""" 
-function smith(g::SIRS_Game,x::Vector{Float64},t::Float64,i; λ=1.0, τ=0.0 )
-    mysum = 0.0
-    for j ∈ 1:(g.NS-1)
-        mysum +=  x[xi(g,j)]*max(min(λ*(g.F(g,x,t,i)-g.F(g,x,t,j)), τ),0.0)
-    end
-    mysum += (1.0-sum(x[xi(g,1:(g.NS-1))]) )*max(min(λ*(g.F(g,x,t,i)-g.F(g,x,t,g.NS)), τ),0.0)
-    
-    for j ∈ 1:g.NS
-        mysum += -x[xi(g,i)]*max(min(λ*(g.F(g,x,t,j)-g.F(g,x,t,i)), τ),0.0)
-    end
-    
-    mysum
-end
-
-
-
-"""
-`fp(g,x,t,j) -> Float`
-payoff for the different strategies. Particular to this code
-
-
-# Examples
-```julia
-julia> g = SIRS_Game(2,(g,x,t,j)->[1,0][j],[4.0,1.0],2.0 ,1.0)
-julia> g.ζ .= [8.0,6.0] 
-julia> g.ϑ .= [10.0,4.0]
-julia> g.θ .= [1.0,8.0] 
-julia> g.ν .= [0.5,3.0] 
-julia> g.ξ .= [1.0,1.0] 
-julia> fp(g,repeat([0.9,0.1,0.0,0.5,0.0],2),0.0,2)
--10.2
-julia> fp(g,repeat([0.9,0.1,0.0,0.5,0.0],2),0.0,2)
--6.859999999999999
-```
-""" 
-function fp(g,x,t,j)
-    (g.β*x[qi(g,1)]+g.r_star-g.c)[j]#(g0.β*x[qi(g,1)])[j] #+[-1.0 0; 0.0 -1.0]*x[3:4]+[0.01;.999])[j]
-end
-
-
-"""
-`h!(du,u,p,t) -> Array{Float}`
-
-total dynamics of our model
-
-""" 
-function h!(du,u,p,t)
-
-    for i ∈ 1:(p.NS-1)
-        # game dynamic
-        du[xi(p,i)] = smith(p,u,t,i;λ=0.1,τ=0.1)
-    end
-
-
-    #make sure that x>=0 and ones(3)'*x == 1 
-    x = u[xi(p,1:(p.NS-1))]
-    x = [x;1.0-sum(x)]
-    x = max.(x,0.0)
-    x = x/sum(x)
-
-    if any(u[xi(p,1:(p.NS-1))].>1) || any(u[xi(p,1:(p.NS-1))] .<0)
-        u[xi(p,1:(p.NS-1))] .= x[1:(end-1)]
-    end
-
-
-    B = p.β'*x
-    
-    I = max(u[1],0)
-    R = max(u[2],0)
-    if u[1]<0
-        u[1] = I
-    end
-    if u[2]<0
-        u[2] = R
-    end
-    
-    I_hat = p.η*(B-p.σ)
-    R_hat = (1-p.η)*(B-p.σ)
-
-    g = (I_hat-I)/B+p.η*log(I/I_hat)+(R-R_hat)*(1-p.η-R/B)/p.γ+p.υ^2*(p.β_star-B)
-    #g = p.η*log(I/I_hat)*(1-p.η)*(R-R_hat)/p.γ+p.ν*(p.β_star-B)
-    #println(I,"    ",I_hat,"    ",p.β,"    ",u[3:4])
-
-    # payoff dynamics
-    du[qi(p,1)] = g
-
-    x_dot = du[xi(p,1:(p.NS-1))]
-    x_dot = [x_dot; -sum(x_dot)]
-    B_dot = x_dot'*p.β
-
-    # epidemic dynamic
-    du[1] = I*(I_hat+R_hat-I-R)+B_dot*I/B
-    du[2] = p.ω*(R_hat-R)-p.γ*(I_hat-I)+B_dot*R/B
-end
-
-

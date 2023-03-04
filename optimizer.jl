@@ -8,9 +8,12 @@ using ProgressBars
 using LaTeXStrings   
 
 
+throw("This file is for a different paper, do not use as it is!")
+
 #plotly()
 gr()
-include("newaux.jl")
+include("lib/SIRS_Game.jl")
+include("lib/Dynamics.jl")
    
 
 g0 = SIRS_Game(2,fp)
