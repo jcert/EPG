@@ -91,11 +91,11 @@ end
 total dynamics of our model, uses logit(p,u,t,i;η=100.01) as the protocol 
 
 """ 
-function h_logit!(du,u,p,t)
+function h_logit!(du,u,p,t;η=0.5,α=0.01)
 
     for i ∈ 1:(p.NS-1)
         # game dynamic
-        du[xi(p,i)] = 0.005*logit(p,u,t,i;η=0.5)
+        du[xi(p,i)] = α*logit(p,u,t,i;η=η)
     end
 
 

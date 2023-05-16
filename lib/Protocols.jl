@@ -61,4 +61,18 @@ end
 
 
 
+function C_logit(g::SIRS_Game,x::Vector{},t,i; η=1.0)
+    mysum = 0
+    for j ∈ 1:(g.NS)
+        mysum += exp(inv(η)* g.F(g,x,t,j))
+        #@show exp(inv(η)* g.F(g,x,t,j)), η
+    end
+    mysum =  exp(inv(η)*g.F(g,x,t,i))/mysum
+    
+end
+
+
+
+
+
 

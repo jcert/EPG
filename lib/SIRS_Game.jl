@@ -90,6 +90,29 @@ function fixall_PBR!(g::SIRS_Game; PBR_η)
 end
 
 
+"""
+`fixall_PBR_estimated!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update η, β* and r*. Call it whenever you change any parameters in g
+
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fixall_PBR_estimated!(g, estimated_C=r->exp.(r)./sum(exp,r) )
+```
+""" 
+function fixall_PBR_estimated!(g::SIRS_Game; estimated_C)
+    fix_η!(g)
+    fix_r_star_PBR_estimated!(g; estimated_C=estimated_C)
+    
+
+    #fix_βx_star!(g)
+    g.β_star = g.β'*estimated_C(g.r_star)
+    g.x_star = estimated_C(g.r_star)
+
+end
+
+
 
 
 """
@@ -187,12 +210,56 @@ function fix_r_star_PBR!(g::SIRS_Game; PBR_η)
 
     g.r_star = JuMP.value.(r)
 
-    @show C(g.r_star)
-    @show g.r_star'*C(g.r_star),  g.β'*C(g.r_star)
+    #@show C(g.r_star)
+    #@show g.r_star'*C(g.r_star),  g.β'*C(g.r_star)
 
 
     g.r_star
 end
+
+
+
+"""
+`fix_r_star_PBR!(g::SIRS_Game) -> nothing`
+
+Get the SIRS_Game `g` to calculate and update r*. Use `fixall!` instead of calling this directly
+# Examples
+```julia
+julia> g = SIRS_Game(2,x->[2;2])
+julia> fix_r_star_IPC!(g)
+```
+""" 
+function fix_r_star_PBR_estimated!(g::SIRS_Game; estimated_C)
+
+    m = JuMP.Model(Ipopt.Optimizer)
+    JuMP.set_silent(m) 
+    JuMP.@variable(m, r[1:g.NS]>=0)
+
+    
+    F(r...) = begin
+        (collect(r)'*estimated_C(collect(r)))
+    end
+    JuMP.register(m, :F, length(r), F; autodiff = true)
+    G(r...) = begin
+        g.β'*estimated_C(collect(r))
+    end
+    JuMP.register(m, :G, length(r), G; autodiff = true)
+
+    JuMP.@NLconstraint(m, F(r...) <= g.c_star )
+    JuMP.@NLobjective(m, Min, G(r...) )
+
+    JuMP.optimize!(m)
+
+    g.r_star = JuMP.value.(r)
+
+    #@show estimated_C(g.r_star)
+    #@show g.r_star'*estimated_C(g.r_star),  g.β'*estimated_C(g.r_star)
+
+
+    g.r_star
+end
+
+
 
 
 
