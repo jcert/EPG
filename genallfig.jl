@@ -31,10 +31,6 @@ include("SIRS_EDM_PBR_fullinfo.jl")
 #fig:exampleManyDistributions
 include("SIRS_EDM_PBR_fullinfo_dist.jl")
 
-#no longer used
-#include("SIRS_EDM_PBR_learn_choice2.jl")
-#include("SIRS_EDM_PBR_learn_choice4.jl")
-
 #fig:cost_upper_bound
 include("plot_shinkyu_1.jl") # you have to manually change "mu_upper_bound =" to get each of the 3 plots 
 
