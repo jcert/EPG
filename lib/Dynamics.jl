@@ -34,7 +34,10 @@ end
 total dynamics of our model, uses smith(p,u,t,i;λ=0.1,τ=0.1) as the protocol 
 
 """ 
-function h_smith!(du,u,p,t)
+function h_smith!(du,u,p,t;kappa=1.0)
+    """
+    the epidemic state is scaled by B, that is, I := ratio of infected * B 
+    """
 
     for i ∈ 1:(p.NS-1)
         # game dynamic
@@ -55,8 +58,8 @@ function h_smith!(du,u,p,t)
 
     B = p.β'*x
     
-    I = max(u[1],0)
-    R = max(u[2],0)
+    I = max(u[1],0.0)
+    R = max(u[2],0.0)
     if u[1]<0
         u[1] = I
     end
@@ -72,7 +75,7 @@ function h_smith!(du,u,p,t)
     #println(I,"    ",I_hat,"    ",p.β,"    ",u[3:4])
 
     # payoff dynamics
-    du[qi(p,1)] = g
+    du[qi(p,1)] = kappa*g
 
     x_dot = du[xi(p,1:(p.NS-1))]
     x_dot = [x_dot; -sum(x_dot)]
@@ -91,7 +94,10 @@ end
 total dynamics of our model, uses logit(p,u,t,i;η=100.01) as the protocol 
 
 """ 
-function h_logit!(du,u,p,t;η=0.5,α=0.01)
+function h_logit!(du,u,p,t;η=0.5,α=1.0,kappa=1.0)
+    """
+    the epidemic state is scaled by B, that is, I := ratio of infected * B 
+    """
 
     for i ∈ 1:(p.NS-1)
         # game dynamic
@@ -112,8 +118,8 @@ function h_logit!(du,u,p,t;η=0.5,α=0.01)
 
     B = p.β'*x
     
-    I = max(u[1],0)
-    R = max(u[2],0)
+    I = max(u[1],0.0)
+    R = max(u[2],0.0)
     if u[1]<0
         u[1] = I
     end
@@ -129,7 +135,7 @@ function h_logit!(du,u,p,t;η=0.5,α=0.01)
     #println(I,"    ",I_hat,"    ",p.β,"    ",u[3:4])
 
     # payoff dynamics
-    du[qi(p,1)] = g
+    du[qi(p,1)] = kappa*g
 
     x_dot = du[xi(p,1:(p.NS-1))]
     x_dot = [x_dot; -sum(x_dot)]
@@ -140,3 +146,62 @@ function h_logit!(du,u,p,t;η=0.5,α=0.01)
     du[2] = p.ω*(R_hat-R)-p.γ*(I_hat-I)+B_dot*R/B
 end
 
+
+
+
+
+"""
+`h_dist!(du,u,p,t) -> Array{Float}`
+
+total dynamics of our model, uses C_dist as the choice function 
+
+"""
+function h_dist!(du,u,p,t; dist=Normal(), α=1.0, kappa=1.0)
+   """
+    the epidemic state is scaled by B, that is, I := ratio of infected * B 
+    """
+    
+    # game dynamic
+    du[xi(p,1:(p.NS-1))] = α.*( C_dist(p,u,t,1:(p.NS-1),dist=dist)-u[xi(p, 1:(p.NS-1))] )
+    
+
+    #make sure that x>=0 and ones(3)'*x == 1 
+    x = u[xi(p,1:(p.NS-1))]
+    x = [x;1.0-sum(x)]
+    x = max.(x,0.0)
+    x = x/sum(x)
+
+    if any(u[xi(p,1:(p.NS-1))].>1) || any(u[xi(p,1:(p.NS-1))] .<0)
+        u[xi(p,1:(p.NS-1))] .= x[1:(end-1)]
+    end
+
+
+    B = p.β'*x
+    
+    I = max(u[1],0.0)
+    R = max(u[2],0.0)
+    if u[1]<0
+        u[1] = I
+    end
+    if u[2]<0
+        u[2] = R
+    end
+    
+    I_hat = p.η*(B-p.σ)
+    R_hat = (1-p.η)*(B-p.σ)
+
+    g = (I_hat-I)/B+p.η*log(I/I_hat)+(R-R_hat)*(1-p.η-R/B)/p.γ+p.υ^2*(p.β_star-B)
+    #g = p.η*log(I/I_hat)*(1-p.η)*(R-R_hat)/p.γ+p.ν*(p.β_star-B)
+    #println(I,"    ",I_hat,"    ",p.β,"    ",u[3:4])
+
+    # payoff dynamics
+    du[qi(p,1)] = kappa*g
+
+    x_dot = du[xi(p,1:(p.NS-1))]
+    x_dot = [x_dot; -sum(x_dot)]
+    B_dot = x_dot'*p.β
+
+    # epidemic dynamic
+    du[1] = I*(I_hat+R_hat-I-R)+B_dot*I/B
+    du[2] = p.ω*(R_hat-R)-p.γ*(I_hat-I)+B_dot*R/B
+end

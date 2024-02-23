@@ -126,7 +126,7 @@ for i_t in eachindex(T[1:end-1])
     #apply the dynamic payoff
     
     prob = ODEProblem(f!,W ,  [T[i_t], T[i_t+1]],g0)
-    sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=0.1)  
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), save_everystep=true, saveat=1.0)  
 
     #sample from the current choice function value
     

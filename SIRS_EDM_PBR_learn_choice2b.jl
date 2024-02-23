@@ -6,20 +6,12 @@ using Optim, LinearAlgebra, Distributions
 
 
 
+#plotly()
+gr()
 include("lib/SIRS_Game.jl")
 include("lib/Dynamics.jl")
    
-
-USE_DEFED = @isdefined USE_TIKZ 
-if USE_DEFED && (USE_TIKZ)
-    pgfplotsx()
-    plt_ext = "tikz"
-else
-    #plotly()
-    gr()
-    plt_ext = "png"
-end
-
+plt_ext = "png"
 plt_size = (400,300)
 default(linewidth = 3, markersize=10, margin = 10*Plots.mm,
     tickfontsize=12, guidefontsize=12, legend_font_pointsize=12)
@@ -110,6 +102,12 @@ end
 
 ##
 
+estimate_μ = 5.0
+g0.β_star = beta_bar(estimate_μ)
+
+
+##
+
 for i in integrator
     global pre_C_choice_learned
     push!(us, integrator.u[end])
@@ -127,7 +125,7 @@ for i in integrator
     if previous_sample_t+Δt < integrator.t
         rr = [ g0.r_star[j] for j=1:g0.NS]
         p = Categorical(x)
-        local C = mean(map(x->x.==(1:g0.NS), rand(p,num_samples) ))
+        C = mean(map(x->x.==(1:g0.NS), rand(p,num_samples) ))
         push!(D,(C,rr))
     end
 
@@ -171,7 +169,6 @@ plot!([switch_time,switch_time],[minimum(y[3,:]),maximum(y[3,:])], linestyle=:da
 ylabel!("x_1")
 xlabel!("Days")
 plot!(size=plt_size)
-yaxis!((0.2,1.0))
 savefig("images/EstimateFrom$(EstimateFrom)_logit_strats_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(plt_ext)")
 
 

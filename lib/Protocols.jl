@@ -1,5 +1,5 @@
 include("SIRS_Game.jl")
-
+using QuadGK
 
 #this file contains data structures and functions used by the main code 
 
@@ -59,7 +59,10 @@ function logit(g::SIRS_Game,x::Vector{},t,i; η=1.0)
     mysum
 end
 
+function Q_logit(g::SIRS_Game,z::Vector{}; η=1.0)
+    η*sum(z[i]*log(z[i]) for i=1:g.NS)
 
+end
 
 function C_logit(g::SIRS_Game,x::Vector{},t,i; η=1.0)
     mysum = 0
@@ -71,8 +74,33 @@ function C_logit(g::SIRS_Game,x::Vector{},t,i; η=1.0)
     
 end
 
+function C_logit_payoff(g::SIRS_Game,payoff::Vector{},t,i; η=1.0)
+    mysum = 0
+    for j ∈ 1:(g.NS)
+        mysum += exp(inv(η)* payoff[j])
+        #@show exp(inv(η)* g.F(g,x,t,j)), η
+    end
+    mysum =  exp(inv(η)*payoff[i])/mysum
+    
+end
 
 
+function C_dist(g::SIRS_Game,x::Vector{},t,i; dist=Normal())
+    #Make sure that the distribution has suport over the reals!
 
+    r = [ g.F(g,x,t,j) for j=1:g.NS]
+    #check the terms here
+    [ quadgk( x->pdf(dist,x)*prod(cdf(dist,x+r[k]-r[j]) for j=1:g.NS if j!=k), 
+                -Inf, Inf, rtol=1e-5)[1] for k=1:g.NS ][i]
+    
+end
 
+function C_dist(g::SIRS_Game,r,i; dist=Normal())
+    #Make sure that the distribution has suport over the reals!
+
+    #check the terms here
+    [ quadgk( x->pdf(dist,x)*prod(cdf(dist,x+r[k]-r[j]-g0.c[k]+g0.c[j]) for j=1:g.NS if j!=k), 
+                -Inf, Inf, rtol=1e-5)[1] for k=1:g.NS ][i]
+    
+end
 
