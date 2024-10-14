@@ -43,7 +43,7 @@ g0.ω = 0.005
 g0.γ = g0.σ
 g0.υ = 2.0
 g0.β   = [0.15;0.19]
-g0.c   = [0.2;0.0]
+g0.c   = (g,z)->[0.2038-0.2*z[1]; 0.0]
 g0.c_star = 0.15
 g0.ρ = 0.0
 
@@ -64,13 +64,15 @@ W = [g0.β[1]*I;g0.β[1]*R;1.0;0.0]
 ## assertions
 # betas are in increasing order
 @assert all(diff(g0.β).>0)
-# c vector is in decreasing order
-@assert all(diff(g0.c).<0)
+# c vector is in decreasing order - #TODO now c is a function
+#@assert all(diff(g0.c).<0)
+
 # σ < β[1]
 @assert all(g0.σ.<g0.β)
 #c_star > g0.c[end]
 @assert g0.c_star>0
-@assert g0.c_star+g0.c[end]<g0.c[1]
+#- #TODO now c is a function
+#@assert g0.c_star+g0.c[end]<g0.c[1]
 
 #g0.r_star = [1.0;-10.0]
 

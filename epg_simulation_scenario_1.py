@@ -20,11 +20,11 @@ omega = 0.005
 upsilon = 3
 kappa = 1
 
-c = np.array((.2, 0))
+c = lambda I:np.array((0.2038-0.2*I, 0))
 beta_vec = np.array((0.15, 0.19))
 
-r_bar = c
-beta_bar = 0.1698
+r_bar = c(0.0159) #from y_initial
+beta_bar = 0.1689
 
 c_star = 1
 r_star = np.array((1.3248, 0))
@@ -53,15 +53,17 @@ def epg_dynamics(y,t):
     if (t <= T_revise):
         dq = (I_hat - I) + eta*(np.log(I) - np.log(I_hat)) + upsilon**2*(beta_bar - B) +\
             (B/gamma)*(R - R_hat)*(1 - eta - R)
+        I_bar = eta*(1 - sigma/beta_bar)
         
     else:
         dq = (I_hat - I) + eta*(np.log(I) - np.log(I_hat)) + upsilon**2*(beta_star - B) +\
             (B/gamma)*(R - R_hat)*(1 - eta - R)
+        I_bar = eta*(1 - sigma/beta_star)
 
     r = q*beta_vec + r_bar
     
     dq = kappa*dq
-    dx = softmax(r-c) - x
+    dx = softmax(r-c(I_bar)) - x
 
     dy = np.concatenate(([dI, dR, dq], dx))
     

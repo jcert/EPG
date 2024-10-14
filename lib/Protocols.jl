@@ -99,7 +99,7 @@ function C_dist(g::SIRS_Game,r,i; dist=Normal())
     #Make sure that the distribution has suport over the reals!
 
     #check the terms here
-    [ quadgk( x->pdf(dist,x)*prod(cdf(dist,x+r[k]-r[j]-g0.c[k]+g0.c[j]) for j=1:g.NS if j!=k), 
+    [ quadgk( x->pdf(dist,x)*prod(cdf(dist,x+r[k]-r[j]-g0.c(g,x)[k]+g0.c(g,x)[j]) for j=1:g.NS if j!=k), 
                 -Inf, Inf, rtol=1e-5)[1] for k=1:g.NS ][i]
     
 end

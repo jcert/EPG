@@ -16,7 +16,8 @@ mutable struct SIRS_Game
     β::Vector{Float64}
     β_star::Float64
     x_star::Vector{Float64}
-    c::Vector{Float64}
+    #cost function (of the state)
+    c
     c_star::Float64
     r_star::Vector{Float64}
     ρ::Float64
@@ -76,11 +77,15 @@ julia> fixall_PBR!(g)
 """ 
 function fixall_PBR!(g::SIRS_Game; PBR_η)
     fix_η!(g)
-    fix_r_star_PBR!(g; PBR_η)
+    fix_r_β_star_PBR!(g; PBR_η)
     
+    #TODO
+    #find I_star
+    I_star = Ib(g,g.β_star)
+
     C(r) = begin
-        s = exp.((g.r_star-g.c)/PBR_η)
-        s/sum(s)
+        s = exp.((g.r_star-g.c(g,[I_star]))*inv(PBR_η))
+        s*inv(sum(s))
     end
 
     #fix_βx_star!(g)
@@ -164,7 +169,7 @@ function fix_βx_star!(g::SIRS_Game)
     m = JuMP.Model(GLPK.Optimizer)
     JuMP.@variable(m, x[1:size(g.β,1)] >= 0)
     JuMP.@constraint(m, sum(x) == 1 )
-    JuMP.@constraint(m, (g.c.-minimum(g.c))'*x<=g.c_star )
+    JuMP.@constraint(m, (g.c(g,x).-minimum(g.c(g,x)))'*x<=g.c_star )
     JuMP.@objective(m, Min, g.β'*x )
 
     JuMP.optimize!(m)
@@ -185,56 +190,52 @@ julia> fix_r_star_IPC!(g)
 ```
 """ 
 function fix_r_star_IPC!(g::SIRS_Game)
-    cc = g.c.-minimum(g.c)
+    cc = g.c(g,x).-minimum(g.c(g,x))
 
     g.r_star = [ g.x_star[i]≈0 ? cc[i]-g.ρ : cc[i] for i=1:size(g.β,1)]
 end
 
 
 """
-`fix_r_star_PBR!(g::SIRS_Game) -> nothing`
+`fix_r_β_star_PBR!(g::SIRS_Game) -> nothing`
 
-Get the SIRS_Game `g` to calculate and update r*. Use `fixall!` instead of calling this directly
+Get the SIRS_Game `g` to calculate and update r* and β*. Use `fixall!` instead of calling this directly
 # Examples
 ```julia
 julia> g = SIRS_Game(2,x->[2;2])
-julia> fix_r_star_IPC!(g)
+julia> fix_r_β_star_PBR!(g)
 ```
 """ 
-function fix_r_star_PBR!(g::SIRS_Game; PBR_η)
+function fix_r_β_star_PBR!(g::SIRS_Game; PBR_η)
 
     m = JuMP.Model(Ipopt.Optimizer)
     JuMP.set_silent(m) 
     JuMP.@variable(m, r[1:g.NS]>=0)
+    JuMP.@variable(m, I>=0)
 
     
-    C(r) = begin
-        s = exp.((r-g.c)/PBR_η)
+    C(r,I) = begin
+        s = exp.((r-g.c(g,[I]))*inv(PBR_η))
 
-        s/sum(s)
+        s*inv(sum(s))
     end
+
+    JuMP.@constraint(m, r'*C(r,I) - g.c_star <= 0 )
+    #TODO add the two constraints relating I and \beta
+    JuMP.@constraint(m, g.η*(1-g.σ*inv(g.β'*C(r,I))) == I )
     
-    F(r...) = begin
-        (collect(r)'*C(collect(r)))
-    end
-    JuMP.register(m, :F, length(r), F; autodiff = true)
-    G(r...) = begin
-        g.β'*C(collect(r))
-    end
-    JuMP.register(m, :G, length(r), G; autodiff = true)
-
-    JuMP.@NLconstraint(m, F(r...) <= g.c_star )
-    JuMP.@NLobjective(m, Min, G(r...) )
+    JuMP.@objective(m, Min,  g.β'*C(r,I) )
 
     JuMP.optimize!(m)
 
     g.r_star = JuMP.value.(r)
+    g.β_star = JuMP.value.(g.β'*C(r,I))[1]
 
     #@show C(g.r_star)
     #@show g.r_star'*C(g.r_star),  g.β'*C(g.r_star)
 
 
-    g.r_star
+    (g.r_star, g.β_star)
 end
 
 

@@ -1,6 +1,6 @@
 using Plots
 
-USE_TIKZ = true
+USE_TIKZ = false
 ENV["GKSwstype"]="nul" #removes the warnings when running it over SSH
 
 

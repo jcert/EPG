@@ -47,7 +47,7 @@ g0.ω = 0.005
 g0.γ = g0.σ
 g0.υ = 2.0
 g0.β   = [0.15;0.19]
-g0.c   = [0.2;0.0]
+g0.c   = (g,z)->[0.2038-0.2*z[1]; 0.0]
 g0.c_star = 0.15
 g0.ρ = 0.0
 
@@ -84,13 +84,14 @@ W = [g0.β[1]*I;g0.β[1]*R;1.0;0.0]
 ## assertions
 # betas are in increasing order
 @assert all(diff(g0.β).>0)
-# c vector is in decreasing order
-@assert all(diff(g0.c).<0)
+# c vector is in decreasing order - #TODO now c is a function
+#@assert all(diff(g0.c).<0)
 # σ < β[1]
 @assert all(g0.σ.<g0.β)
 #c_star > g0.c[end]
 @assert g0.c_star>0
-@assert g0.c_star+g0.c[end]<g0.c[1]
+#- #TODO now c is a function
+#@assert g0.c_star+g0.c[end]<g0.c[1]
 
 #g0.r_star = [1.0;-10.0]
 
@@ -176,7 +177,7 @@ savefig(f3, "images/1.c.bottom.SIRS_EDM_x1_$(g0.c_star)_nu$(round(g0.υ,digits=1
 
 plot!(f2)
 w = 5*12
-h = 0.05*2
+h = 0.06*2
 plot!(Shape(tmax .+ [-w,w,w,-w], 1.45 .+ [-h,-h,h,h]), opacity=.15, label=nothing)
 ylabel!(L"I(t)/I^*")
 xlabel!("days")
@@ -184,7 +185,7 @@ savefig(f2,"images/1.b.bottom.SIRS_EDM_I_ratio_$(g0.c_star)_nu$(round(g0.υ,digi
 
 
 plot!(f2, size=plt_size, legend = :outerright)
-xlims!(tmax.+(-5.0,5.0))
-ylims!((1.4,1.50))
+xlims!(tmax.+(-7.0,7.0))
+ylims!((1.4,1.60))
 savefig("images/1.d.bottom.SIRS_EDM_I_ratio_peak_$(g0.c_star)_nu$(round(g0.υ,digits=1)).$(plt_ext)")
 ##

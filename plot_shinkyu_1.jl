@@ -77,5 +77,5 @@ ylabel!(L"$\bar \beta_{\text{min}}$")
 savefig("images/beta_bar_mu_upper_bound_plot.$(plt_ext)")
 
 
-f = Polynomials.fit(mu_upper_bounds, beta_bars2,5)
-plot!(1:0.01:5,f.(1:0.01:5))
+#f = Polynomials.fit(mu_upper_bounds, beta_bars2,5)
+#plot!(1:0.01:5,f.(1:0.01:5))

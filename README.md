@@ -8,7 +8,7 @@ This paper proposes an approach to mitigate epidemic spread in a population of s
 
 
 ## Requirements
-- Julia 1.8.5
+- Julia 1.11.0
 
 ## How to use
 Following the [guide on environments](https://pkgdocs.julialang.org/v1/), you can open Julia in a terminal, press `]` to access the package manager, type `activate .` and then `instantiate`. 

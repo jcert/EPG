@@ -43,7 +43,7 @@ g0.ω = 0.005
 g0.γ = g0.σ
 g0.υ = 10.0
 g0.β   = [0.15;0.19]
-g0.c   = [0.2;0.0]
+g0.c   = (g,z)->[0.2038-0.2*z[1]; 0.0]
 g0.c_star = 6.00
 g0.ρ = 0.0
 
@@ -53,14 +53,14 @@ fixall_PBR!(g0;PBR_η=myPBR_η)
 
 # for the bound to be meaningful we need to 
 #    have S(x(0),p(0)) = 0  
-I = 0.0159 #Ib(g0,g0.β[1])
-R = 0.318  #Rb(g0,g0.β[1])
+I = Ib(g0,0.15012)
+R = Rb(g0,0.15012)
 S = 1.0-I-R
 
 #W = [g0.β[1]*I;g0.β[1]*R;1.0;0.0]
 W = [   Bx(g0,[0;0;g0.x_star[1:end-1]...;0])*I;
         Bx(g0,[0;0;g0.x_star[1:end-1]...;0])*R;
-        0.997;
+        1.0;
         0.0]
 
 g0.c_star = 0.15
@@ -68,13 +68,14 @@ g0.c_star = 0.15
 ## assertions
 # betas are in increasing order
 @assert all(diff(g0.β).>0)
-# c vector is in decreasing order
-@assert all(diff(g0.c).<0)
+# c vector is in decreasing order - #TODO now c is a function
+#@assert all(diff(g0.c).<0)
 # σ < β[1]
 @assert all(g0.σ.<g0.β)
 #c_star > g0.c[end]
 @assert g0.c_star>0
-@assert g0.c_star+g0.c[end]<g0.c[1]
+#- #TODO now c is a function
+#@assert g0.c_star+g0.c[end]<g0.c[1]
 
 #g0.r_star = [1.0;-10.0]
 
