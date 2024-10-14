@@ -24,7 +24,7 @@ c = lambda I:np.array((0.2038-0.2*I, 0))
 beta_vec = np.array((0.15, 0.19))
 
 r_bar = c(0.0159) #from y_initial
-beta_bar = 0.1689 #167
+beta_bar = 0.167
 
 c_star = 1
 r_star = np.array((1.3248, 0))
